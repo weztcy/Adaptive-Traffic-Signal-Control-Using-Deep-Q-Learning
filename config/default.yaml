@@ -1,0 +1,83 @@
+# Adaptive Traffic Signal Control Configuration
+
+simulation:
+  time_step: 1.0               # Simulation resolution in seconds (Delta t)
+  decision_step: 5.0           # Seconds per RL agent decision step
+  episode_duration: 3600.0     # Total simulation duration per episode in seconds (1 hour)
+  min_green_time: 10.0         # Minimum green duration in seconds before phase switch
+  max_green_time: 60.0         # Maximum green duration in seconds to prevent starvation
+  yellow_time: 4.0             # Yellow / clearance clearance interval in seconds
+  saturation_flow_rate: 0.55   # Maximum departure rate in vehicles/second per approach (approx 1.8s headway)
+  max_queue_capacity: 150      # Maximum physical queue capacity for normalization
+  max_wait_norm: 180.0         # Maximum waiting time cap in seconds for normalization
+  seed: 42
+
+scenarios:
+  low:
+    name: "Low Demand"
+    description: "Light traffic flow below saturation"
+    rates:
+      north: 0.10   # 360 veh/hr
+      south: 0.10   # 360 veh/hr
+      east: 0.07    # 252 veh/hr
+      west: 0.07    # 252 veh/hr
+  medium:
+    name: "Medium Demand"
+    description: "Moderate traffic flow with mild queuing"
+    rates:
+      north: 0.22   # 792 veh/hr
+      south: 0.22   # 792 veh/hr
+      east: 0.16   # 576 veh/hr
+      west: 0.16   # 576 veh/hr
+  high:
+    name: "High Demand"
+    description: "Heavy peak-hour traffic near intersection saturation capacity"
+    rates:
+      north: 0.38   # 1368 veh/hr
+      south: 0.38   # 1368 veh/hr
+      east: 0.30   # 1080 veh/hr
+      west: 0.30   # 1080 veh/hr
+  changing:
+    name: "Dynamic Changing Demand"
+    description: "Time-varying traffic flow simulating morning rush and directional shift"
+    base_rates:
+      north: 0.12
+      south: 0.12
+      east: 0.10
+      west: 0.10
+
+reward:
+  queue_weight: 0.04           # Weight for total queue length
+  wait_weight: 0.02            # Weight for average waiting time
+  pressure_weight: 0.03        # Weight for directional queue imbalance (pressure)
+  switch_penalty: 1.5          # Penalty for frequent phase transitions (clearance loss)
+  emergency_penalty: 5.0       # Penalty if any queue reaches near capacity (> 80)
+
+dqn:
+  state_dim: 12                # Observation feature count
+  action_dim: 2                # 0: Keep current phase, 1: Switch phase
+  hidden_dims: [128, 128]      # Multi-layer perceptron hidden layers
+  learning_rate: 0.0005
+  gamma: 0.99                  # Discount factor
+  epsilon_start: 1.0
+  epsilon_end: 0.05
+  epsilon_decay_steps: 10000   # Steps to decay epsilon
+  replay_buffer_capacity: 50000
+  batch_size: 64
+  target_update_interval: 400  # Steps between hard target network sync
+  tau: 0.005                   # Or soft update parameter
+  use_soft_update: false
+  train_episodes: 120          # Episodes for training
+  eval_frequency: 10           # Evaluate every N episodes
+  eval_seeds: [100, 200, 300, 400, 500]
+  seed: 42
+
+baseline:
+  fixed_time:
+    green_ns: 30.0             # Fixed green time for North-South in seconds
+    green_ew: 30.0             # Fixed green time for East-West in seconds
+    yellow_time: 4.0           # Yellow clearance in seconds
+  actuated:
+    min_green: 10.0
+    max_green: 60.0
+    queue_threshold_ratio: 1.5 # Switch if red queue exceeds green queue by 1.5x

@@ -1,0 +1,8 @@
+{
+  "total_episodes": 100,
+  "best_val_wait": 13.988240100223933,
+  "elapsed_seconds": 191.10210800170898,
+  "seed": 42,
+  "model_path": "models\\best_dqn_model.pt",
+  "history_path": "results/metrics\\training_history.json"
+}
